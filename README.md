@@ -2,13 +2,10 @@
 
 ## About this project
 Tetris (C++, Console)
-## What's New? (Last updated 2023.01.11)
+## What's New? (Last updated 2023.01.16)
 ```
- 1) Add collision check function
- 2) Add bottom check function
- 3) Add auto down function
- 4) Add random function (Next block, Next direction)
- 5) Add key input function
+ 1) Bug fix - when a straight line does not go left.
+ 2) Bug fix - sometimes comes down by two spaces.
 ```
 ## Next Updates
 ```

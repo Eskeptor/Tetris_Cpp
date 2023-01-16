@@ -221,7 +221,7 @@ void InitGame()
 	// Initialize Player Data
 	{
 		g_player.SetPosition(4, 1);
-		g_player.SetXPositionRange(0, MAP_WIDTH);
+		g_player.SetXPositionRange(-1, MAP_WIDTH);
 		g_player.SetYPositionRange(0, MAP_HEIGHT);
 		g_player.SetBlock(RandomBlock());
 		g_player.SetDirection((CPlayer::eDirection)RamdomDirection());
@@ -315,6 +315,14 @@ void Render()
 			nXAdd += 2;
 		}
 	}
+
+	DWORD dw;
+	char chBuf[256] = { 0, };
+	coord.X = 26;
+	coord.Y = 4;
+	int nLen = sprintf_s(chBuf, sizeof(chBuf), "X: %02d, Y: %02d", g_player.GetXPosition(), g_player.GetYPosition());
+	SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
+	WriteFile(console.hBuffer[console.nCurBuffer], chBuf, nLen, &dw, NULL);
 }
 
 /**
@@ -410,27 +418,70 @@ bool IsRotateAvailable()
 }
 
 /**
+@TODO		Check Fill line
+*/
+void CheckFillLine()
+{
+	COORD curPos = g_player.GetCursor();
+	bool bFill = true;
+	int nSize = 0;
+
+	for (int nY = curPos.Y; nY < curPos.Y + 4; ++nY)
+	{
+		bFill = true;
+
+		for (int nX = 1; nX < MAP_WIDTH; ++nX)
+		{
+			if (snArrMapBackup[nY][nX] == 0)
+			{
+				bFill = false;
+				break;
+			}
+		}
+
+		// TODO 
+		if (bFill &&
+			nY < MAP_HEIGHT - 1)
+		{
+			nSize = sizeof(int) * MAP_WIDTH * (nY + 1);
+			memmove_s(snArrMapBackup, nSize, snArrMapBackup[1], nSize);
+			//memcpy_s(snArrMapBackup, nSize, snArrMapBackup[1], nSize);
+
+			//memset(snArrMapBackup, 0, sizeof(int) * (MAP_WIDTH - 2));
+		}
+	}
+}
+
+/**
 @brief		Function to determine if the bottom has been reached
 @param
 @return
 */
 void CheckBottom()
 {
-	if (IsMoveAvailable(0, 1) == false)
+	double dTimeDiff = clock() - console.timeStart;
+
+	if (dTimeDiff < 1000)
+		return;	
+	
+	console.timeStart = clock();
+
+	if (IsMoveAvailable(0, 1))
 	{
-		double dTimeDiff = clock() - console.timeStart;
-
-		if (dTimeDiff >= 1000)
-		{
-			memcpy_s(snArrMapBackup, sizeof(int) * MAP_WIDTH * MAP_HEIGHT, snArrMap, sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
-
-			g_player.SetPosition(4, 1);
-			g_player.SetBlock(RandomBlock());
-			g_player.SetDirection((CPlayer::eDirection)RamdomDirection());
-
-			g_prevPlayerData = g_player;
-		}
+		// Y Move
+		g_player.AddPosition(0, 1);
+		return;
 	}
+
+	memcpy_s(snArrMapBackup, sizeof(int) * MAP_WIDTH * MAP_HEIGHT, snArrMap, sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
+
+	//CheckFillLine();
+
+	g_player.SetPosition(4, 1);
+	g_player.SetBlock(RandomBlock());
+	g_player.SetDirection((CPlayer::eDirection)RamdomDirection());
+
+	g_prevPlayerData = g_player;
 }
 
 /**
@@ -483,23 +534,6 @@ void InputKey()
 }
 
 /**
-@brief		Function that auto down move
-@param
-@return
-*/
-void AutoDown()
-{
-	double dTimeDiff = clock() - console.timeStart;
-
-	if (dTimeDiff >= 1000)
-	{
-		console.timeStart = clock();
-
-		g_player.AddPosition(0, 1);
-	}
-}
-
-/**
 @brief		Main Function
 @param
 @return
@@ -512,9 +546,9 @@ int main(void)
 	{
 		InputKey();
 		CalcPlayer();
+
 		Render();
 		CheckBottom();
-		AutoDown();
 
 		ClearScreen();
 		BufferFlip();
