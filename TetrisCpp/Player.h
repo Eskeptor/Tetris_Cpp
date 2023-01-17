@@ -1,8 +1,8 @@
 /**
 @brief			Player class
 @author			Eskeptor
-@date			2023-01-11
-@version		0.0.2
+@date			2023-01-17
+@version		0.0.3
 */
 
 #pragma once
@@ -38,6 +38,10 @@ private:
 	int m_nCurBlock;
 	// Current Block Direction
 	eDirection m_eDirection;
+	// Game Score
+	int m_nGameScore;
+	// Game Over
+	bool m_bIsGameOver;
 
 public:
 	/**
@@ -46,6 +50,7 @@ public:
 	CPlayer(int nXPos = 0, int nYPos = 0, int nCurBlock = 0, eDirection eDir = eDirection::Dir0)
 		: m_nXPos(nXPos), m_nYPos(nYPos), m_nCurBlock(nCurBlock), m_eDirection(eDir)
 		, m_nMinXPos(0), m_nMinYPos(0), m_nMaxXPos(20), m_nMaxYPos(20)
+		, m_nGameScore(0), m_bIsGameOver(false)
 	{}
 
 	/**
@@ -128,6 +133,36 @@ public:
 	}
 
 	/**
+	@brief		Set game score
+	@param		nScore		Game Score
+	@return
+	*/
+	inline void SetGameScore(int nScore)
+	{
+		m_nGameScore = nScore;
+	}
+
+	/**
+	@brief		Add game score
+	@param		nAdder		Add score
+	@return
+	*/
+	inline void AddGameScore(int nAdder)
+	{
+		m_nGameScore = m_nGameScore + nAdder >= 0 ? m_nGameScore + nAdder : 0;
+	}
+
+	/**
+	@brief		Set game over status
+	@param		bIsGameOver		Game over status
+	@return
+	*/
+	inline void SetGameOver(bool bIsGameOver)
+	{
+		m_bIsGameOver = bIsGameOver;
+	}
+
+	/**
 	@brief		Set current position (Increase by adder value)
 	@param		nXAdder		X Increased value
 	@param		nYAdder		Y Increased value
@@ -204,10 +239,30 @@ public:
 	@param
 	@return		Current player position (COORD)
 	*/
-	inline COORD GetCursor()
+	inline COORD GetCursor() const
 	{
 		COORD cursor{ (SHORT)m_nXPos, (SHORT)m_nYPos };
 		return cursor;
+	}
+
+	/**
+	@brief		Get game score
+	@param
+	@return		Game score
+	*/
+	inline int GetGameScore() const
+	{
+		return m_nGameScore;
+	}
+
+	/**
+	@brief		Get game over status
+	@param
+	@return		Game over status
+	*/
+	inline bool GetGameOver() const
+	{
+		return m_bIsGameOver;
 	}
 
 	CPlayer& operator=(CPlayer& player)

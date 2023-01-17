@@ -1,21 +1,27 @@
 # Tetris (C++)
-
+![homepage](./ScreenShot/ScreenShot01.png)
 ## About this project
-Tetris (C++, Console)
-## What's New? (Last updated 2023.01.16)
+Tetris (C++, Window Console)
+## Console Setting
 ```
- 1) Bug fix - when a straight line does not go left.
- 2) Bug fix - sometimes comes down by two spaces.
+ Font : Gullim
+```
+## What's New? (Last updated 2023.01.17)
+```
+ 1) Check Line
+ 2) Game Over
+ 3) Game Reset (R Key)
+ 4) Game Score
 ```
 ## Next Updates
 ```
- 1) Line Check
+ 1) Show Next Block
 ```
 ## License
 ```
 MIT License
 
-Copyright (c) 2022 Jeon Ye-Chan (Eskeptor)
+Copyright (c) 2023 Jeon Ye-Chan (Eskeptor)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

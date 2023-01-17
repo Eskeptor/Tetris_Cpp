@@ -1,8 +1,8 @@
 /**
 @brief			Main
 @author			Eskeptor
-@date			2023-01-11
-@version		0.0.2
+@date			2023-01-17
+@version		0.0.3
 */
 
 #include <iostream>
@@ -13,6 +13,9 @@
 
 using namespace std;
 
+constexpr int WIN_WIDTH = 70;
+constexpr int WIN_HEIGHT = 60;
+
 // Map Width (constexpr)
 constexpr int MAP_WIDTH = 12;
 // Map Height (constexpr)
@@ -21,6 +24,10 @@ constexpr int MAP_HEIGHT = 22;
 constexpr int BLOCK_WIDTH = 4;
 // Block Height (constexpr)
 constexpr int BLOCK_HEIGHT = 4;
+// Player Start X Position 
+constexpr int START_POS_X = 4;
+// Player Start Y Position
+constexpr int START_POS_Y = 1;
 
 // Key Code
 enum eKeyCode
@@ -30,6 +37,7 @@ enum eKeyCode
 	KEY_LEFT = 75,
 	KEY_RIGHT = 77,
 	KEY_SPACE = 32,
+	KEY_R = 114,
 };
 
 // Rectangle Structure
@@ -68,6 +76,33 @@ struct stConsole
 		, rdGen(rdDevice()), rdBlockDist(0, 6), rdDirDist(CPlayer::eDirection::Dir0, CPlayer::eDirection::Dir270)
 		, timeStart(clock())
 	{}
+};
+
+// Origin Map
+const int ORIGIN_MAP[MAP_HEIGHT][MAP_WIDTH] =
+{
+	{1,1,1,1,1,1,1,1,1,1,1,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,1,1,1,1,1,1,1,1,1,1,1,},
 };
 
 // Map Data
@@ -212,159 +247,6 @@ int RamdomDirection()
 }
 
 /**
-@brief		Function that initialize game data & Settings
-@param
-@return
-*/
-void InitGame()
-{
-	// Initialize Player Data
-	{
-		g_player.SetPosition(4, 1);
-		g_player.SetXPositionRange(-1, MAP_WIDTH);
-		g_player.SetYPositionRange(0, MAP_HEIGHT);
-		g_player.SetBlock(RandomBlock());
-		g_player.SetDirection((CPlayer::eDirection)RamdomDirection());
-
-		g_prevPlayerData = g_player;
-	}
-
-	// Initialize Console Data
-	{
-		console.hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
-		console.nCurBuffer = 0;
-
-		CONSOLE_CURSOR_INFO consoleCursor{ 1, FALSE };
-		CONSOLE_SCREEN_BUFFER_INFO consoleInfo{ 0, };
-		GetConsoleScreenBufferInfo(console.hConsole, &consoleInfo);
-		console.rtConsole.nWidth = consoleInfo.srWindow.Right - consoleInfo.srWindow.Left;
-		console.rtConsole.nHeight = consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top;
-
-		console.hBuffer[0] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
-		SetConsoleScreenBufferSize(console.hBuffer[0], consoleInfo.dwSize);
-		SetConsoleWindowInfo(console.hBuffer[0], TRUE, &consoleInfo.srWindow);
-		SetConsoleCursorInfo(console.hBuffer[0], &consoleCursor);
-
-		console.hBuffer[1] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
-		SetConsoleScreenBufferSize(console.hBuffer[1], consoleInfo.dwSize);
-		SetConsoleWindowInfo(console.hBuffer[1], TRUE, &consoleInfo.srWindow);
-		SetConsoleCursorInfo(console.hBuffer[1], &consoleCursor);
-	}
-
-	// Map Backup
-	{
-		memcpy_s(snArrMapBackup, sizeof(int) * MAP_WIDTH * MAP_HEIGHT, snArrMap, sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
-	}
-}
-
-/**
-@brief		Function to erase game data.
-@param
-@return
-*/
-void DestroyGame()
-{
-	if (g_pCurBlock != nullptr)
-	{
-		delete[] g_pCurBlock;
-		g_pCurBlock = nullptr;
-	}
-
-	if (console.hBuffer[0] != nullptr)
-	{
-		CloseHandle(console.hBuffer[0]);
-	}
-
-	if (console.hBuffer[1] != nullptr)
-	{
-		CloseHandle(console.hBuffer[1]);
-	}
-}
-
-/**
-@brief		Rendering function
-@param
-@return
-*/
-void Render()
-{
-	COORD coord{ 0, };
-	int nXAdd = 0;
-
-	for (int nY = 0; nY < MAP_HEIGHT; ++nY)
-	{
-		nXAdd = 0;
-
-		for (int nX = 0; nX < MAP_WIDTH; ++nX)
-		{
-			DWORD dw;
-			coord.X = nXAdd;
-			coord.Y = nY;
-
-			SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
-			WriteFile(console.hBuffer[console.nCurBuffer], BLOCK_TYPES[snArrMap[nY][nX]], sizeof(char) * 4, &dw, NULL);
-
-			if (snArrMap[nY][nX] == 0)
-			{
-				SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
-				WriteFile(console.hBuffer[console.nCurBuffer], BLOCK_TYPES[snArrMap[nY][nX]], sizeof(char) * 4, &dw, NULL);
-			}
-
-			// Special symbol size is 2 space.
-			nXAdd += 2;
-		}
-	}
-
-	DWORD dw;
-	char chBuf[256] = { 0, };
-	coord.X = 26;
-	coord.Y = 4;
-	int nLen = sprintf_s(chBuf, sizeof(chBuf), "X: %02d, Y: %02d", g_player.GetXPosition(), g_player.GetYPosition());
-	SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
-	WriteFile(console.hBuffer[console.nCurBuffer], chBuf, nLen, &dw, NULL);
-}
-
-/**
-@brief		Function that puts blocks into a map to match the player's position.
-@param
-@return
-*/
-void CalcPlayer()
-{
-	COORD playerCursor = g_player.GetCursor();
-
-	// 이전 위치의 블록 제거
-	if (g_prevPlayerData != g_player)
-	{
-		int* pBlock = GetRotateBlock(g_prevPlayerData.GetBlock(), g_prevPlayerData.GetDirection());
-		COORD sprevCursor = g_prevPlayerData.GetCursor();
-
-		for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
-		{
-			for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
-			{
-				if (pBlock[(nY * BLOCK_HEIGHT) + nX] &&
-					pBlock[(nY * BLOCK_HEIGHT) + nX] == snArrMap[sprevCursor.Y + nY][sprevCursor.X + nX])
-					snArrMap[sprevCursor.Y + nY][sprevCursor.X + nX] = 0;
-			}
-		}
-
-		g_prevPlayerData = g_player;
-	}
-
-	int* pBlock = GetRotateBlock(g_player.GetBlock(), g_player.GetDirection());
-	for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
-	{
-		for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
-		{
-			if (pBlock[(nY * BLOCK_HEIGHT) + nX])
-				snArrMap[playerCursor.Y + nY][playerCursor.X + nX] = pBlock[(nY * BLOCK_HEIGHT) + nX];
-		}
-	}
-}
-
-/**
 @brief		Function to determine if there is a collision
 @param		pBlock		Block
 @param		coordPlayer	Player coord
@@ -418,13 +300,224 @@ bool IsRotateAvailable()
 }
 
 /**
-@TODO		Check Fill line
+@brief		Function that initialize game data & Settings
+@param
+@return
 */
-void CheckFillLine()
+void InitGame(bool bInitConsole = true)
+{
+	// Initialize Player Data
+	{
+		g_player.SetPosition(START_POS_X, START_POS_Y);
+		g_player.SetXPositionRange(-1, MAP_WIDTH);
+		g_player.SetYPositionRange(0, MAP_HEIGHT);
+		g_player.SetBlock(RandomBlock());
+		g_player.SetDirection((CPlayer::eDirection)RamdomDirection());
+		g_player.SetGameScore(0);
+		g_player.SetGameOver(false);
+
+		g_prevPlayerData = g_player;
+	}
+
+	// Initialize Console Data
+	if (bInitConsole)
+	{
+		console.hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+		console.nCurBuffer = 0;
+
+		CONSOLE_CURSOR_INFO consoleCursor{ 1, FALSE };
+		CONSOLE_SCREEN_BUFFER_INFO consoleInfo{ 0, };
+		GetConsoleScreenBufferInfo(console.hConsole, &consoleInfo);
+		consoleInfo.dwSize.X = 70;
+		consoleInfo.dwSize.Y = 30;
+		consoleInfo.srWindow.Right = consoleInfo.dwSize.X;
+		consoleInfo.srWindow.Bottom = consoleInfo.dwSize.Y;
+
+		console.rtConsole.nWidth = consoleInfo.srWindow.Right - consoleInfo.srWindow.Left;
+		console.rtConsole.nHeight = consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top;
+
+		console.hBuffer[0] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+		SetConsoleScreenBufferSize(console.hBuffer[0], consoleInfo.dwSize);
+		SetConsoleWindowInfo(console.hBuffer[0], TRUE, &consoleInfo.srWindow);
+		SetConsoleCursorInfo(console.hBuffer[0], &consoleCursor);
+
+		console.hBuffer[1] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+		SetConsoleScreenBufferSize(console.hBuffer[1], consoleInfo.dwSize);
+		SetConsoleWindowInfo(console.hBuffer[1], TRUE, &consoleInfo.srWindow);
+		SetConsoleCursorInfo(console.hBuffer[1], &consoleCursor);
+	}
+
+	// Map Backup
+	{
+		int nMapSize = sizeof(int) * MAP_WIDTH * MAP_HEIGHT;
+		memcpy_s(snArrMap, nMapSize, ORIGIN_MAP, nMapSize);
+		memcpy_s(snArrMapBackup, nMapSize, snArrMap, nMapSize);
+	}
+}
+
+/**
+@brief		Function to erase game data.
+@param
+@return
+*/
+void DestroyGame()
+{
+	if (g_pCurBlock != nullptr)
+	{
+		delete[] g_pCurBlock;
+		g_pCurBlock = nullptr;
+	}
+
+	if (console.hBuffer[0] != nullptr)
+	{
+		CloseHandle(console.hBuffer[0]);
+	}
+
+	if (console.hBuffer[1] != nullptr)
+	{
+		CloseHandle(console.hBuffer[1]);
+	}
+}
+
+/**
+@brief		Rendering function
+@param		nXOffset	X Offset (Render Position)
+@param		nYOffset	Y Offset (Render Position)
+@return
+*/
+void Render(int nXOffset = 0, int nYOffset = 0)
+{
+	COORD coord{ 0, };
+	int nXAdd = 0;
+	DWORD dw = 0;
+	char chBuf[256] = { 0, };
+
+	// Map & Player(Figure) Draw
+	{
+		for (int nY = 0; nY < MAP_HEIGHT; ++nY)
+		{
+			nXAdd = 0;
+
+			for (int nX = 0; nX < MAP_WIDTH; ++nX)
+			{				
+				coord.X = nXAdd + nXOffset;
+				coord.Y = nY + nYOffset;
+
+				SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
+				WriteFile(console.hBuffer[console.nCurBuffer], BLOCK_TYPES[snArrMap[nY][nX]], sizeof(BLOCK_TYPES[snArrMap[nY][nX]]), &dw, NULL);
+
+				if (snArrMap[nY][nX] == 0)
+				{
+					SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
+					WriteFile(console.hBuffer[console.nCurBuffer], BLOCK_TYPES[snArrMap[nY][nX]], sizeof(BLOCK_TYPES[snArrMap[nY][nX]]), &dw, NULL);
+					nXAdd += 1;
+				}
+
+				// Special symbol size is 2 space.
+				nXAdd += 1;
+			}
+
+			int nSize = WIN_WIDTH - coord.X;
+			if (nSize > 0)
+			{
+				for (int i = 0; i < nSize - 1; i++)
+				{
+					coord.X += (i + 1);
+					SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
+					WriteFile(console.hBuffer[console.nCurBuffer], BLOCK_TYPES[0], sizeof(BLOCK_TYPES[0]), &dw, NULL);
+				}
+			}
+		}
+	}
+
+	// Game Over
+	if (g_player.GetGameOver())
+	{
+		coord.X = 5 + nXOffset;
+		coord.Y = 10 + nYOffset;
+		memset(chBuf, 0, sizeof(chBuf));
+		int nLen = sprintf_s(chBuf, sizeof(chBuf), "Game Over");
+		SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
+		WriteFile(console.hBuffer[console.nCurBuffer], chBuf, nLen, &dw, NULL);
+	}
+
+	// Player Real Position
+	{
+		//char chBuf[256] = { 0, };
+		//coord.X = 26;
+		//coord.Y = 4;
+		//int nLen = sprintf_s(chBuf, sizeof(chBuf), "X: %02d, Y: %02d", g_player.GetXPosition(), g_player.GetYPosition());
+		//SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
+		//WriteFile(console.hBuffer[console.nCurBuffer], chBuf, nLen, &dw, NULL);
+	}
+
+	// Score
+	{
+		coord.X = 27 + nXOffset;
+		coord.Y = 0 + nYOffset;
+		memset(chBuf, 0, sizeof(chBuf));
+		int nLen = sprintf_s(chBuf, sizeof(chBuf), "Score: %6d", g_player.GetGameScore());
+		SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
+		WriteFile(console.hBuffer[console.nCurBuffer], chBuf, nLen, &dw, NULL);
+	}
+}
+
+/**
+@brief		Function that puts blocks into a map to match the player's position.
+@param
+@return
+*/
+void CalcPlayer()
+{
+	COORD playerCursor = g_player.GetCursor();
+
+	// 이전 위치의 블록 제거
+	if (g_prevPlayerData != g_player)
+	{
+		int* pBlock = GetRotateBlock(g_prevPlayerData.GetBlock(), g_prevPlayerData.GetDirection());
+		COORD sprevCursor = g_prevPlayerData.GetCursor();
+
+		for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+		{
+			for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+			{
+				if (pBlock[(nY * BLOCK_HEIGHT) + nX] &&
+					pBlock[(nY * BLOCK_HEIGHT) + nX] == snArrMap[sprevCursor.Y + nY][sprevCursor.X + nX])
+					snArrMap[sprevCursor.Y + nY][sprevCursor.X + nX] = 0;
+			}
+		}
+
+		g_prevPlayerData = g_player;
+	}
+
+	int* pBlock = GetRotateBlock(g_player.GetBlock(), g_player.GetDirection());
+	for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+	{
+		for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+		{
+			if (pBlock[(nY * BLOCK_HEIGHT) + nX])
+				snArrMap[playerCursor.Y + nY][playerCursor.X + nX] = pBlock[(nY * BLOCK_HEIGHT) + nX];
+		}
+	}
+
+	// 새로운 블럭이 놓아졌을 때 더 이상 움직일 수 없는지 확인 후 게임오버 정함
+	if (g_player.GetXPosition() == START_POS_X &&
+		g_player.GetYPosition() == START_POS_Y)
+		g_player.SetGameOver(!IsMoveAvailable(0, 1));
+}
+
+/**
+@brief		Check Fill Line
+@param
+@return		true: Fill and Line Clear, false: Not fill
+*/
+bool CheckFillLine()
 {
 	COORD curPos = g_player.GetCursor();
 	bool bFill = true;
 	int nSize = 0;
+	bool bLineCleared = false;
 
 	for (int nY = curPos.Y; nY < curPos.Y + 4; ++nY)
 	{
@@ -439,17 +532,16 @@ void CheckFillLine()
 			}
 		}
 
-		// TODO 
 		if (bFill &&
 			nY < MAP_HEIGHT - 1)
 		{
-			nSize = sizeof(int) * MAP_WIDTH * (nY + 1);
-			memmove_s(snArrMapBackup, nSize, snArrMapBackup[1], nSize);
-			//memcpy_s(snArrMapBackup, nSize, snArrMapBackup[1], nSize);
-
-			//memset(snArrMapBackup, 0, sizeof(int) * (MAP_WIDTH - 2));
+			nSize = sizeof(int) * MAP_WIDTH * (nY - 1);
+			memcpy_s(snArrMapBackup[2], nSize, snArrMapBackup[1], nSize);
+			bLineCleared = true;
 		}
 	}
+
+	return bLineCleared;
 }
 
 /**
@@ -463,6 +555,9 @@ void CheckBottom()
 
 	if (dTimeDiff < 1000)
 		return;	
+
+	if (g_player.GetGameOver())
+		return;
 	
 	console.timeStart = clock();
 
@@ -475,9 +570,14 @@ void CheckBottom()
 
 	memcpy_s(snArrMapBackup, sizeof(int) * MAP_WIDTH * MAP_HEIGHT, snArrMap, sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
 
-	//CheckFillLine();
+	// Check Fill Line
+	if (CheckFillLine())
+	{
+		g_player.AddGameScore(1);
+		memcpy_s(snArrMap, sizeof(int) * MAP_WIDTH * MAP_HEIGHT, snArrMapBackup, sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
+	}
 
-	g_player.SetPosition(4, 1);
+	g_player.SetPosition(START_POS_X, START_POS_Y);
 	g_player.SetBlock(RandomBlock());
 	g_player.SetDirection((CPlayer::eDirection)RamdomDirection());
 
@@ -500,35 +600,69 @@ void InputKey()
 		switch (nKey)
 		{
 			case eKeyCode::KEY_UP:
+			{
+				if (g_player.GetGameOver())
+					return;
+
+				while (IsMoveAvailable(0, 1))
+				{
+					g_player.AddPosition(0, 1);
+					Sleep(0);
+				}
+				console.timeStart = clock() - 1000;
 				break;
+			}
 			case eKeyCode::KEY_DOWN:
+			{
+				if (g_player.GetGameOver())
+					return;
+
 				if (IsMoveAvailable(0, 1))
 				{
 					g_player.AddPosition(0, 1);
 					console.timeStart = clock();
 				}
 				break;
+			}
 			case eKeyCode::KEY_LEFT:
+			{
+				if (g_player.GetGameOver())
+					return;
+
 				if (IsMoveAvailable(-1, 0))
 				{
 					g_player.AddPosition(-1, 0);
-					console.timeStart = clock();
 				}
 				break;
+			}
 			case eKeyCode::KEY_RIGHT:
+			{
+				if (g_player.GetGameOver())
+					return;
+
 				if (IsMoveAvailable(1, 0))
 				{
 					g_player.AddPosition(1, 0);
-					console.timeStart = clock();
 				}
 				break;
+			}
 			case eKeyCode::KEY_SPACE:
+			{
+				if (g_player.GetGameOver())
+					return;
+
 				if (IsRotateAvailable())
 				{
 					g_player.SetNextDirection();
-					console.timeStart = clock();
 				}
 				break;
+			}
+			case eKeyCode::KEY_R:
+			{
+				InitGame(false);
+
+				break;
+			}
 		}
 	}
 }
@@ -547,12 +681,12 @@ int main(void)
 		InputKey();
 		CalcPlayer();
 
-		Render();
 		CheckBottom();
+		Render(3, 1);
 
 		ClearScreen();
 		BufferFlip();
-		Sleep(10);
+		Sleep(1);
 	}
 
 	DestroyGame();
