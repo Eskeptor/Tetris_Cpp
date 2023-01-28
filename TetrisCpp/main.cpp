@@ -1,8 +1,8 @@
 /**
 @brief			Main
 @author			Eskeptor
-@date			2023-01-17
-@version		0.0.3
+@date			2023-01-28
+@version		0.0.4
 */
 
 #include <iostream>
@@ -411,11 +411,11 @@ void Render(int nXOffset = 0, int nYOffset = 0)
 				{
 					SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
 					WriteFile(console.hBuffer[console.nCurBuffer], BLOCK_TYPES[snArrMap[nY][nX]], sizeof(BLOCK_TYPES[snArrMap[nY][nX]]), &dw, NULL);
-					nXAdd += 1;
+					//nXAdd += 1;
 				}
 
 				// Special symbol size is 2 space.
-				nXAdd += 1;
+				nXAdd += 2;
 			}
 
 			int nSize = WIN_WIDTH - coord.X;

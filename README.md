@@ -6,12 +6,9 @@ Tetris (C++, Window Console)
 ```
  Font : Gullim
 ```
-## What's New? (Last updated 2023.01.17)
+## What's New? (Last updated 2023.01.28)
 ```
- 1) Check Line
- 2) Game Over
- 3) Game Reset (R Key)
- 4) Game Score
+ 1) Bug Fix
 ```
 ## Next Updates
 ```
