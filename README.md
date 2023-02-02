@@ -6,13 +6,14 @@ Tetris (C++, Window Console)
 ```
  Font : Gullim
 ```
-## What's New? (Last updated 2023.01.28)
+## What's New? (Last updated 2023.02.02)
 ```
- 1) Bug Fix
+ 1) Render Optimization
 ```
 ## Next Updates
 ```
  1) Show Next Block
+ 2) Render
 ```
 ## License
 ```
