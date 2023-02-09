@@ -373,6 +373,7 @@ void Render(int nXOffset = 0, int nYOffset = 0)
 	{
 		for (int nY = 0; nY < MAP_HEIGHT; ++nY)
 		{
+			int nBlockCount = 0;
 			nXAdd = 0;
 
 			for (int nX = 0; nX < MAP_WIDTH; ++nX)
@@ -383,21 +384,25 @@ void Render(int nXOffset = 0, int nYOffset = 0)
 				SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
 				WriteFile(g_console.hBuffer[g_console.nCurBuffer], BLOCK_TYPES[g_nArrMap[nY][nX]], sizeof(BLOCK_TYPES[g_nArrMap[nY][nX]]), &dw, NULL);
 
-				nXAdd += 1;
+				++nXAdd;
 
 				if (g_nArrMap[nY][nX] == 0)
-					nXAdd += 1;
+					++nXAdd;
+				else
+					++nBlockCount;
+			}
 
-				//int nSize = WIN_WIDTH - coord.X;
-				//if (nSize > 0)
-				//{
-				//	for (int i = 0; i < nSize - 1; i++)
-				//	{
-				//		coord.X += (i + 1);
-				//		SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
-				//		WriteFile(console.hBuffer[console.nCurBuffer], BLOCK_TYPES[0], sizeof(BLOCK_TYPES[0]), &dw, NULL);
-				//	}
-				//}
+			// ¹þ¾î³­ ºÎºÐ µ¡Ä¥ÇÏ±â			
+			if (nY > 0 &&
+				nY < MAP_HEIGHT - 1)
+			{
+				int nStart = nXOffset + nBlockCount + (MAP_WIDTH - nBlockCount) * 2;
+				for (int nX = 0; nX < nBlockCount; ++nX)
+				{
+					coord.X = nStart + nX;
+					SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
+					WriteFile(g_console.hBuffer[g_console.nCurBuffer], BLOCK_TYPES[0], sizeof(BLOCK_TYPES[0]), &dw, NULL);
+				}
 			}
 		}
 	}
